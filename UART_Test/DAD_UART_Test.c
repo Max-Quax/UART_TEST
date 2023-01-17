@@ -62,15 +62,15 @@
 
 int main(void)
 {
-    /* Stop WDT  */
+    //Stop WDT
     MAP_WDT_A_holdTimer();
 
     // One-time initialization of UART driver
-    UART_init();
-    initializeGPIO();       //TODO do I need this?
+    //UART_init();
+    //initializeGPIO();       //TODO do I need this?
 
-     // Configure GPIO pins as UART
-    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,
+    // Configure GPIO pins as UART
+    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,
           GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
 
      // Related to baudrate generation and sampling
@@ -80,6 +80,6 @@ int main(void)
      // initialize and enable EUSCI_A0
      DAD_UART_Init(EUSCI_A0_BASE, &uartConfig);
 
-
-
+     //TODO send data
+     //TODO receive data
 }

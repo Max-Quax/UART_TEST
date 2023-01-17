@@ -23,8 +23,23 @@
 
 uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor);
 
-void DAD_UART_Set_Config(uint16_6 baudRate, eUSCI_UART_ConfigV1* config);
+void DAD_UART_Set_Config(uint16_t baudRate, eUSCI_UART_ConfigV1* config);
 
 void DAD_UART_Init(uint32_t moduleInstance, eUSCI_UART_ConfigV1* config);
+
+//TODO
+//void DAD_UART_Write_Test(char c);
+
+//TODO
+//void DAD_UART_Write_To_HMI();
+
+//TODO
+//void DAD_UART_Write_To_BT();
+
+//TODO
+//void DAD_UART_Read_From_HMI();
+
+//TODO
+//void DAD_UART_Read_From_BT();
 
 #endif /* DAD_UART_H_ */
