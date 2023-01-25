@@ -27,8 +27,11 @@ void DAD_UART_Set_Config(uint16_t baudRate, eUSCI_UART_ConfigV1* config);
 
 void DAD_UART_Init(uint32_t moduleInstance, eUSCI_UART_ConfigV1* config);
 
+//TODO Stop UART
+// void DAD_UART_Stop(uint32_t moduleInstance);
+
 //TODO
-//void DAD_UART_Write_Test(char c);
+void DAD_UART_Write_Test(uint32_t moduleInstance, char c);
 
 //TODO
 //void DAD_UART_Write_To_HMI();

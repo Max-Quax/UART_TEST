@@ -69,10 +69,6 @@ int main(void)
     //UART_init();
     //initializeGPIO();       //TODO do I need this?
 
-    // Configure GPIO pins as UART
-    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,
-          GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-
      // Related to baudrate generation and sampling
      eUSCI_UART_ConfigV1 uartConfig;
      DAD_UART_Set_Config(9600, &uartConfig);
@@ -80,6 +76,10 @@ int main(void)
      // initialize and enable EUSCI_A0
      DAD_UART_Init(EUSCI_A0_BASE, &uartConfig);
 
-     //TODO send data
+     while(true){
+         DAD_UART_Write_Test(EUSCI_A0_BASE, 'P');
+     }
+
+
      //TODO receive data
 }
