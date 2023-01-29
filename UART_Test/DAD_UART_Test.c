@@ -1,51 +1,3 @@
-/* --COPYRIGHT--,BSD
- * Copyright (c) 2017, Texas Instruments Incorporated
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * --/COPYRIGHT--*/
-/******************************************************************************
- * MSP432 Empty Project
- *
- * Description: An empty project that uses DriverLib
- *
- *                MSP432P401
- *             ------------------
- *         /|\|                  |
- *          | |                  |
- *          --|RST               |
- *            |                  |
- *            |                  |
- *            |                  |
- *            |                  |
- *            |                  |
- * Author: 
-*******************************************************************************/
 /* DriverLib Includes */
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 
@@ -57,29 +9,34 @@
 // Import the UART driver definitions
 #include <ti/drivers/UART.h>
 #include <DAD_UART.h>
-#define BUFSIZE 0xFF
 
 
 int main(void)
-{
+ {
     //Stop WDT
     MAP_WDT_A_holdTimer();
 
-    // One-time initialization of UART driver
-    //UART_init();
-    //initializeGPIO();       //TODO do I need this?
-
-     // Related to baudrate generation and sampling
-     eUSCI_UART_ConfigV1 uartConfig;
-     DAD_UART_Set_Config(9600, &uartConfig);
+    // Related to baudrate generation and sampling. Config struct also
+    DAD_UART_Struct uartConfig;
+    DAD_UART_Set_Config(9600, EUSCI_A0_BASE, &uartConfig);
 
      // initialize and enable EUSCI_A0
-     DAD_UART_Init(EUSCI_A0_BASE, &uartConfig);
+     DAD_UART_Init(&uartConfig, 1024);
 
+     DAD_UART_Write_Test(&uartConfig, 'T');
+     modifiedRingBuf_put(&(uartConfig.UART_Buffer), 'R'); // Put received data at end of buffer
      while(true){
-         DAD_UART_Write_Test(EUSCI_A0_BASE, 'P');
+         // If an 'R' is received, toggle light
+         if(DAD_UART_HasChar(&uartConfig) && DAD_UART_GetChar(&uartConfig) == 'R'){
+             MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+             //DAD_UART_Write_Test(&uartConfig, 'T'); // TODO bugs out if write immediately after read
+         }
      }
 
 
-     //TODO receive data
+     // Done receive data through buffer
+     // TODO test write thoroughly
+     // TODO test stop
+     // TODO test different baud rates
+     // TODO test longer messages
 }

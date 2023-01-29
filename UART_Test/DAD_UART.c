@@ -7,10 +7,110 @@
 
 #include <DAD_UART.h>
 
+// Declare buffer pointers. Pointers stored directly in RAM for use in ISR
+static volatile RingBuf_Handle UART0_BuffPtr;
+static volatile RingBuf_Handle UART1_BuffPtr;
+static volatile RingBuf_Handle UART2_BuffPtr;
+static volatile RingBuf_Handle UART3_BuffPtr;
+
+// Sets the config struct to specific baudrate
+void DAD_UART_Set_Config(uint16_t baudRate, uint32_t moduleInstance, DAD_UART_Struct* UARTPtr){
+
+    // Set Baud rate and modulation registers
+    float divisionFactor = ((float)CS_getSMCLK()) / baudRate;                   // N
+    UARTPtr->uartConfig.selectClockSource =  EUSCI_A_UART_CLOCKSOURCE_SMCLK;            // 3MHz
+    UARTPtr->uartConfig.clockPrescalar = (uint_fast16_t)(divisionFactor/16);            // int(N/16)
+    UARTPtr->uartConfig.firstModReg = (uint_fast8_t)((divisionFactor/16-((int)divisionFactor/16))*16);            // first modulator register
+    UARTPtr->uartConfig.secondModReg = DAD_UART_Find_Second_Mod_Reg(divisionFactor);    // Set modulation rate
+    UARTPtr->uartConfig.overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION;   // Oversampling
+
+    // Set other UART configuration
+    UARTPtr->uartConfig.parity = EUSCI_A_UART_NO_PARITY;
+    UARTPtr->uartConfig.msborLsbFirst = EUSCI_A_UART_LSB_FIRST;
+    UARTPtr->uartConfig.numberofStopBits = EUSCI_A_UART_ONE_STOP_BIT;
+    UARTPtr->uartConfig.dataLength = EUSCI_A_UART_8_BIT_LEN;
+    UARTPtr->uartConfig.uartMode = EUSCI_A_UART_MODE;
+
+    // Set Module instance
+    UARTPtr->moduleInst = moduleInstance;
+
+    // Debug - Set up LED
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+}
+
+
+// Start UART communication
+void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
+    // Init and enable UART module
+    MAP_UART_initModule(UARTPtr->moduleInst, &(UARTPtr->uartConfig));
+    MAP_UART_enableModule(UARTPtr->moduleInst);
+
+    // Init buffer
+    UARTPtr->bufPtr = (unsigned char*)malloc(bufferSize * sizeof(unsigned char));
+    modifiedRingBuf_construct(&(UARTPtr->UART_Buffer), UARTPtr->bufPtr, bufferSize);
+
+    // Choose which interrupt, which pins to set
+    uint32_t interruptNum = INT_EUSCIA0;
+    switch(UARTPtr->moduleInst){
+    case EUSCI_A0_BASE:
+        interruptNum = INT_EUSCIA0;                                     // Interrupt for A0
+        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,    // GPIO for A0 UART
+                  GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+        UART0_BuffPtr = &UARTPtr->UART_Buffer;                          // Set BuffPtr
+        break;
+    case EUSCI_A1_BASE:
+        interruptNum = INT_EUSCIA1;                                     // Interrupt for A1
+        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P2,    // GPIO for A1 UART
+                              GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+        UART1_BuffPtr = &UARTPtr->UART_Buffer;                          // Set BuffPtr
+        break;
+    case EUSCI_A2_BASE:
+        interruptNum = INT_EUSCIA2;                                     // Interrupt for A2
+        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P3,    // GPIO for A2 UART
+                          GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
+        UART2_BuffPtr = &UARTPtr->UART_Buffer;                          // Set BuffPtr
+        break;
+    case EUSCI_A3_BASE:
+        interruptNum = INT_EUSCIA3;                                     // Interrupt for A3
+        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P9,    // GPIO for A3 UART
+                      GPIO_PIN6 | GPIO_PIN7, GPIO_PRIMARY_MODULE_FUNCTION);
+        UART3_BuffPtr = &UARTPtr->UART_Buffer;                          // Set BuffPtr
+        break;
+    }
+
+    // Enable Interrupts
+    MAP_UART_enableInterrupt(UARTPtr->moduleInst, EUSCI_A_UART_RECEIVE_INTERRUPT);
+    MAP_Interrupt_enableInterrupt(interruptNum);
+    MAP_Interrupt_enableMaster();
+}
+
+// Write to console
+void DAD_UART_Write_Test(DAD_UART_Struct* UARTPtr, char c){
+    MAP_UART_transmitData(UARTPtr->moduleInst, c);
+}
+
+// TODO stop UART
+void DAD_UART_Stop(DAD_UART_Struct* UARTPtr){
+    // TODO recycle buffer memory
+
+    MAP_UART_disableInterrupt(UARTPtr->moduleInst, 0xFF);    // Disables all interrupts on specific module
+}
+
+bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr){
+    return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer));
+}
+
+unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
+    unsigned char c = '\0';
+    modifiedRingBuf_get(&(UARTPtr->UART_Buffer), &c);
+    return c;
+}
+
 // Returns the value for the second modulation register
     // Uses fractional part of division factor to look through table.
     // Return value just below fractional part
-uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor){
+static uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor){
     // lookup table
     float fract = divisionFactor - ((int)divisionFactor);
     float table[] = {0.0000, 0.0529, 0.0715, 0.0835, 0.1001, 0.1252, 0.1430, 0.1670, 0.2147, 0.2224, 0.2503, 0.3000, 0.3335, 0.3575, 0.3753, 0.4003, 0.4286, 0.4378,
@@ -29,81 +129,13 @@ uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor){
     return i;
 }
 
-// Sets the config struct to specific baudrate
-void DAD_UART_Set_Config(uint16_t baudRate, eUSCI_UART_ConfigV1* uartConfig){
-
-    // Set Baud rate and modulation registers
-    float divisionFactor = ((float)CS_getSMCLK()) / baudRate;                   // N
-    uartConfig->selectClockSource =  EUSCI_A_UART_CLOCKSOURCE_SMCLK;            // 3MHz
-    uartConfig->clockPrescalar = (uint_fast16_t)(divisionFactor/16);            // int(N/16)
-    uartConfig->firstModReg = (uint_fast8_t)((divisionFactor/16-((int)divisionFactor/16))*16);            // first modulator register
-    uartConfig->secondModReg = DAD_UART_Find_Second_Mod_Reg(divisionFactor);    // Set modulation rate
-    uartConfig->overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION;   // Oversampling
-
-    // Set other UART configuration
-    uartConfig->parity = EUSCI_A_UART_NO_PARITY;
-    uartConfig->msborLsbFirst = EUSCI_A_UART_LSB_FIRST;
-    uartConfig->numberofStopBits = EUSCI_A_UART_ONE_STOP_BIT;
-    uartConfig->dataLength = EUSCI_A_UART_8_BIT_LEN;
-    uartConfig->uartMode = EUSCI_A_UART_MODE;
-
-    // Debug - Set up LED
-    MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
-    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-}
-
-
-// Start UART communication
-void DAD_UART_Init(uint32_t moduleInstance, eUSCI_UART_ConfigV1* config){
-    // Init and enable UART module
-    MAP_UART_initModule(moduleInstance, config);
-    MAP_UART_enableModule(moduleInstance);
-
-    // Choose which interrupt, which pins to set
-    uint32_t interruptNum = INT_EUSCIA0;
-    switch(moduleInstance){
-    case EUSCI_A0_BASE:
-        interruptNum = INT_EUSCIA0;                                     // Interrupt for A0
-        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,    // GPIO for A0 UART
-                  GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-        break;
-    case EUSCI_A1_BASE:
-        interruptNum = INT_EUSCIA1;                                     // Interrupt for A1
-        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P2,    // GPIO for A1 UART
-                              GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-        break;
-    case EUSCI_A2_BASE:
-        interruptNum = INT_EUSCIA2;                                     // Interrupt for A2
-        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P3,    // GPIO for A2 UART
-                          GPIO_PIN3 | GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
-        break;
-    case EUSCI_A3_BASE:
-        interruptNum = INT_EUSCIA3;                                     // Interrupt for A3
-        MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P9,    // GPIO for A3 UART
-                      GPIO_PIN6 | GPIO_PIN7, GPIO_PRIMARY_MODULE_FUNCTION);
-
-        break;
-    }
-
-    // Enable Interrupts
-    MAP_UART_enableInterrupt(moduleInstance, EUSCI_A_UART_RECEIVE_INTERRUPT);
-    Interrupt_enableInterrupt(interruptNum);
-    //MAP_Interrupt_enableSleepOnIsrExit();
-    MAP_Interrupt_enableMaster();
-}
-
-// Write to console
-void DAD_UART_Write_Test(uint32_t moduleInstance, char c){
-    UART_transmitData(moduleInstance, c);
-}
 
 
 void EUSCIA0_IRQHandler(void){
     uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A0_BASE);
 
     if(intStatus & EUSCI_A_UART_RECEIVE_INTERRUPT){
-        // TODO Received Data
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);    // Debug
+        modifiedRingBuf_put(UART0_BuffPtr, UART_receiveData(EUSCI_A0_BASE)); // Put received data at end of buffer
     }
 
     //Clear all interrupts lol
@@ -114,8 +146,7 @@ void EUSCIA1_IRQHandler(void){
     uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A1_BASE);
 
     if(intStatus & EUSCI_A_UART_RECEIVE_INTERRUPT){
-        // TODO Received Data
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);    // Debug
+        modifiedRingBuf_put(UART1_BuffPtr, UART_receiveData(EUSCI_A1_BASE)); // Put received data at end of buffer
     }
 
     //Clear all interrupts lol
@@ -126,8 +157,7 @@ void EUSCIA2_IRQHandler(void){
     uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A2_BASE);
 
     if(intStatus & EUSCI_A_UART_RECEIVE_INTERRUPT){
-        // TODO Received Data
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);    // Debug
+        modifiedRingBuf_put(UART2_BuffPtr, UART_receiveData(EUSCI_A2_BASE)); // Put received data at end of buffer
     }
 
     //Clear all interrupts lol
@@ -138,12 +168,9 @@ void EUSCIA3_IRQHandler(void){
     uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A3_BASE);
 
     if(intStatus & EUSCI_A_UART_RECEIVE_INTERRUPT){
-        // TODO Received Data
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);    // Debug
+        modifiedRingBuf_put(UART3_BuffPtr, UART_receiveData(EUSCI_A3_BASE)); // Put received data at end of buffer
     }
 
     //Clear all interrupts lol
     UART_clearInterruptFlag(EUSCI_A3_BASE, 0xFF);
 }
-
-// TODO - CRC?
