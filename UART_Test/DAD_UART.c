@@ -107,6 +107,10 @@ unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
     return c;
 }
 
+size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr){
+    return modifiedRingBuf_getCount(*(UARTPtr->UART_Buffer));
+}
+
 // Returns the value for the second modulation register
     // Uses fractional part of division factor to look through table.
     // Return value just below fractional part

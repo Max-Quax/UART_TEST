@@ -39,8 +39,6 @@
 #include <ti/drivers/UART.h>            // Import the UART driver definitions
 #include <modifiedRingbuf.h>            // Import ring buffer
 
-#define UART_SIZE_OF_BUFFER 1024;
-
 typedef struct DAD_UART_Struct_{
     unsigned char* bufPtr;
     eUSCI_UART_ConfigV1 uartConfig;
@@ -68,6 +66,9 @@ void DAD_UART_Write_Test(DAD_UART_Struct* UARTPtr, char c);
 
 // At least 1 char is ready
 bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr);
+
+// Returns number of chars in buffer
+size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr);
 
 // Used in Set_Config
     //Returns the value for the second modulation register
