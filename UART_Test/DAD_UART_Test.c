@@ -24,15 +24,22 @@ int main(void)
     size_t bufferSize = 1024;
     DAD_UART_Init(&uartConfig, bufferSize);
 
-    DAD_UART_Write_Test(&uartConfig, 'T');
+    DAD_UART_Write_Char(&uartConfig, 'T');
     modifiedRingBuf_put(&(uartConfig.UART_Buffer), 'R'); // Put received data at end of buffer
-    while(DAD_UART_NumCharsInBuffer(&(uartConfig->UART_Buffer) < bufferSize - 1)){
+
+    // Test that UART can write a string
+    char msg[] = "string";
+    DAD_UART_Write_Str(&uartConfig, msg);
+
+    /*while(DAD_UART_NumCharsInBuffer(&(uartConfig->UART_Buffer) < bufferSize - 1)){
      // If an 'R' is received, toggle light
      if(DAD_UART_HasChar(&uartConfig) && DAD_UART_GetChar(&uartConfig) == 'R'){
-         MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-         //DAD_UART_Write_Test(&uartConfig, 'T'); // TODO bugs out if write immediately after read
+         // MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+         // DAD_UART_Write_Test(&uartConfig, 'T'); // TODO bugs out if write immediately after read
      }
-    }
+    }*/
+
+    while(1);   // Trap CPU
 
     // TODO Time how long it takes to run through whole buffer
 

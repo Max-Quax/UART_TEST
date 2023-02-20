@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Specific to UART HAL
 #include <ti/drivers/UART.h>            // Import the UART driver definitions
@@ -56,13 +57,14 @@ void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize);
 // TODO Stop UART
 void DAD_UART_Stop(DAD_UART_Struct* UARTPtr);
 
-// TODO Get a full message from UART
-// bool DAD_UART_GetMSG(DAD_UART_Struct* UARTPtr, unsigned char* c);
-
 // Get single char from UART
 unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr);
 
-void DAD_UART_Write_Test(DAD_UART_Struct* UARTPtr, char c);
+// Write a single char to microSD
+void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, char c);
+
+// Write a string to microSD
+void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg);
 
 // At least 1 char is ready
 bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr);
@@ -77,6 +79,7 @@ size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr);
 static uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor);
 
 // TODO At least 1 full message is ready
+// TODO test latency
 //bool DAD_UART_MsgReady(DAD_UART_Struct* UARTPtr);
 
 // TODO - CRC?

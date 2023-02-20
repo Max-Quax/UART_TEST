@@ -17,8 +17,8 @@ static volatile RingBuf_Handle UART3_BuffPtr;
 void DAD_UART_Set_Config(uint16_t baudRate, uint32_t moduleInstance, DAD_UART_Struct* UARTPtr){
 
     // Set Baud rate and modulation registers
-    float divisionFactor = ((float)CS_getSMCLK()) / baudRate;                   // N
-    UARTPtr->uartConfig.selectClockSource =  EUSCI_A_UART_CLOCKSOURCE_SMCLK;            // 3MHz
+    double divisionFactor = MAP_CS_getSMCLK() / ((double)baudRate);                     // N
+    UARTPtr->uartConfig.selectClockSource =  EUSCI_A_UART_CLOCKSOURCE_SMCLK;            // Can be any freq
     UARTPtr->uartConfig.clockPrescalar = (uint_fast16_t)(divisionFactor/16);            // int(N/16)
     UARTPtr->uartConfig.firstModReg = (uint_fast8_t)((divisionFactor/16-((int)divisionFactor/16))*16);            // first modulator register
     UARTPtr->uartConfig.secondModReg = DAD_UART_Find_Second_Mod_Reg(divisionFactor);    // Set modulation rate
@@ -85,9 +85,18 @@ void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
     MAP_Interrupt_enableMaster();
 }
 
-// Write to console
-void DAD_UART_Write_Test(DAD_UART_Struct* UARTPtr, char c){
+// Write single char
+void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, char c){
     MAP_UART_transmitData(UARTPtr->moduleInst, c);
+}
+
+// Write full message
+void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg){
+    uint16_t msgLength = strlen(msg);
+    uint16_t i;
+    for(i = 0; i < msgLength; i++){
+        MAP_UART_transmitData(UARTPtr->moduleInst, msg[i]);
+    }
 }
 
 // TODO stop UART
@@ -108,7 +117,7 @@ unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
 }
 
 size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr){
-    return modifiedRingBuf_getCount(*(UARTPtr->UART_Buffer));
+    return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer));
 }
 
 // Returns the value for the second modulation register
