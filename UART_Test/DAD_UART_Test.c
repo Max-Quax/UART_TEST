@@ -33,6 +33,10 @@ int main(void)
     //modifiedRingBuf_put(&(uartConfig.UART_Buffer), 'R'); // Put received data at end of buffer
 
     #ifdef TESTMODE_SEND
+        // Timer setup
+        Timer_A_UpModeConfig timerCfg;
+        DAD_Timer_Initialize_ms(60000, TIMER_A1_BASE, &uartConfig);
+
         // Generate test string
         int i;
         char msg[2049] = "t";
@@ -40,7 +44,10 @@ int main(void)
             strcat(msg, "t");
 
         // Send test string over UART
+        DAD_Timer_Start(TIMER_A1_BASE);                         // Begin test timer
         DAD_UART_Write_Str(&uartConfig, msg);
+        timeElapsed = DAD_Timer_Stop(TIMER_A1_BASE, &timerCfg); // End test timer
+
     #endif
 
     #ifdef TESTMODE_RECEIVE
