@@ -116,6 +116,10 @@ unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
     return c;
 }
 
+void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, char* c){
+    return modifiedRingBuf_peek(UARTPtr->moduleInst, c);
+}
+
 size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr){
     return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer));
 }

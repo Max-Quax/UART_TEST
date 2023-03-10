@@ -63,6 +63,9 @@ unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr);
 // Write a single char to microSD
 void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, char c);
 
+// Peek char at front of buffer
+void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, char* c);
+
 // Write a string to microSD
 void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg);
 
