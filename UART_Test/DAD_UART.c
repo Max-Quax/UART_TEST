@@ -86,12 +86,12 @@ void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
 }
 
 // Write single char
-void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, char c){
+void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, unsigned char c){
     MAP_UART_transmitData(UARTPtr->moduleInst, c);
 }
 
 // Write full message
-void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg){
+void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, unsigned char* msg){
     uint16_t msgLength = strlen(msg);
     uint16_t i;
     for(i = 0; i < msgLength; i++){
@@ -116,8 +116,8 @@ unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
     return c;
 }
 
-void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, char* c){
-    return modifiedRingBuf_peek(UARTPtr->moduleInst, c);
+void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, unsigned char* c){
+    modifiedRingBuf_peek(&(UARTPtr->UART_Buffer), c);
 }
 
 size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr){
