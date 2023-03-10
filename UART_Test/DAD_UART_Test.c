@@ -11,6 +11,7 @@
 // Import the UART driver definitions
 #include <ti/drivers/UART.h>
 #include <DAD_UART.h>
+#include <DAD_Timer.h>
 
 // Test mode - can be send or receive
 #define TESTMODE_SEND
@@ -23,7 +24,7 @@ int main(void)
 
     // Related to baudrate generation and sampling. Config struct also
     DAD_UART_Struct uartConfig;
-    DAD_UART_Set_Config(9600, EUSCI_A0_BASE, &uartConfig);
+    DAD_UART_Set_Config(57600, EUSCI_A0_BASE, &uartConfig);
 
     // initialize and enable EUSCI_A0
     size_t bufferSize = 1024;
@@ -34,8 +35,9 @@ int main(void)
 
     #ifdef TESTMODE_SEND
         // Timer setup
+        double timeElapsed;
         Timer_A_UpModeConfig timerCfg;
-        DAD_Timer_Initialize_ms(60000, TIMER_A1_BASE, &uartConfig);
+        DAD_Timer_Initialize_ms(60000, TIMER_A1_BASE, &timerCfg);
 
         // Generate test string
         int i;
@@ -45,8 +47,11 @@ int main(void)
 
         // Send test string over UART
         DAD_Timer_Start(TIMER_A1_BASE);                         // Begin test timer
+        DAD_UART_Write_Char(&uartConfig, 's');
         DAD_UART_Write_Str(&uartConfig, msg);
+        DAD_UART_Write_Char(&uartConfig, 'q');
         timeElapsed = DAD_Timer_Stop(TIMER_A1_BASE, &timerCfg); // End test timer
+
 
     #endif
 
