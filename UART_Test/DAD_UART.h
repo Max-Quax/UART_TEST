@@ -41,7 +41,7 @@
 #include <modifiedRingbuf.h>            // Import ring buffer
 
 typedef struct DAD_UART_Struct_{
-    unsigned char* bufPtr;
+    char* bufPtr;
     eUSCI_UART_ConfigV1 uartConfig;
     uint32_t moduleInst;
     RingBuf_Object UART_Buffer;
@@ -58,19 +58,28 @@ void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize);
 void DAD_UART_Stop(DAD_UART_Struct* UARTPtr);
 
 // Get single char from UART
-unsigned char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr);
+char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr);
+
+// Get char from buffer, assign pointer of c to char
+void DAD_UART_GetCharPtr(DAD_UART_Struct* UARTPtr, char* c);
 
 // Write a single char to microSD
-void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, unsigned char c);
+void DAD_UART_Write_Char(DAD_UART_Struct* UARTPtr, char c);
 
 // Peek char at front of buffer
-void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, unsigned char* c);
+void DAD_UART_Peek(DAD_UART_Struct* UARTPtr, char* c);
 
 // Write a string to microSD
-void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, unsigned char* msg);
+void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg);
 
 // At least 1 char is ready
 bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr);
+
+// Disable Interrupts
+void DAD_UART_DisableInt(DAD_UART_Struct* UARTPtr);
+
+// Enable Interrupts
+void DAD_UART_EnableInt(DAD_UART_Struct* UARTPtr);
 
 // Returns number of chars in buffer
 size_t DAD_UART_NumCharsInBuffer(DAD_UART_Struct* UARTPtr);
