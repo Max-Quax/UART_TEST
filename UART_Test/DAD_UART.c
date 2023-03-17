@@ -5,7 +5,7 @@
  *      Author: Maximilien
  */
 
-#include <DAD_UART.h>
+#include <HAL/DAD_UART.h>
 
 // Declare buffer pointers. Pointers stored directly in RAM for use in ISR
 static volatile RingBuf_Handle UART0_BuffPtr;
@@ -107,7 +107,7 @@ void DAD_UART_Stop(DAD_UART_Struct* UARTPtr){
 }
 
 bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr){
-    return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer));
+    return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer)) > 0;
 }
 
 char DAD_UART_GetChar(DAD_UART_Struct* UARTPtr){
