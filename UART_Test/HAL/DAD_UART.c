@@ -41,13 +41,16 @@ void DAD_UART_Set_Config(uint16_t baudRate, uint32_t moduleInstance, DAD_UART_St
 
 
 // Start UART communication
-void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
+bool DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
     // Init and enable UART module
-    MAP_UART_initModule(UARTPtr->moduleInst, &(UARTPtr->uartConfig));
+    if(!MAP_UART_initModule(UARTPtr->moduleInst, &UARTPtr->uartConfig))
+        return false;
     MAP_UART_enableModule(UARTPtr->moduleInst);
 
     // Init buffer
     UARTPtr->bufPtr = (char*)malloc(bufferSize * sizeof(char));
+    if(UARTPtr->bufPtr == NULL)
+        return false;   // Insuff space
     modifiedRingBuf_construct(&(UARTPtr->UART_Buffer), UARTPtr->bufPtr, bufferSize);
 
     // Choose which interrupt, which pins to set
@@ -83,6 +86,7 @@ void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize){
     MAP_UART_enableInterrupt(UARTPtr->moduleInst, EUSCI_A_UART_RECEIVE_INTERRUPT);
     MAP_Interrupt_enableInterrupt(interruptNum);
     MAP_Interrupt_enableMaster();
+    return true;
 }
 
 // Write single char
@@ -101,10 +105,29 @@ void DAD_UART_Write_Str(DAD_UART_Struct* UARTPtr, char* msg){
 
 // TODO stop UART
 void DAD_UART_Stop(DAD_UART_Struct* UARTPtr){
-    // TODO recycle buffer memory
+    uint16_t interruptNum = 0;
+    switch(UARTPtr->moduleInst){
+        case EUSCI_A0_BASE:
+            interruptNum = INT_EUSCIA0;                                     // Interrupt for A0
+            break;
+        case EUSCI_A1_BASE:
+            interruptNum = INT_EUSCIA1;                                     // Interrupt for A1
+            break;
+        case EUSCI_A2_BASE:
+            interruptNum = INT_EUSCIA2;                                     // Interrupt for A2
+            break;
+        case EUSCI_A3_BASE:
+            interruptNum = INT_EUSCIA3;                                     // Interrupt for A3
+            break;
+        }
 
-    MAP_UART_disableInterrupt(UARTPtr->moduleInst, 0xFF);    // Disables all interrupts on specific module
+    UART_disableInterrupt(UARTPtr->moduleInst, EUSCI_A_UART_RECEIVE_INTERRUPT);
+    Interrupt_disableInterrupt(interruptNum);
+    UART_disableModule(UARTPtr->moduleInst);
+//    MAP_UART_disableInterrupt(UARTPtr->moduleInst, 0xFF);    // Disables all interrupts on specific module
 }
+
+
 
 bool DAD_UART_HasChar(DAD_UART_Struct* UARTPtr){
     return modifiedRingBuf_getCount(&(UARTPtr->UART_Buffer)) > 0;

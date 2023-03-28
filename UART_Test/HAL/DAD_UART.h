@@ -38,7 +38,7 @@
 
 // Specific to UART HAL
 #include <ti/drivers/UART.h>            // Import the UART driver definitions
-#include <modifiedRingbuf.h>            // Import ring buffer
+#include <HAL/modifiedRingbuf.h>            // Import ring buffer
 
 typedef struct DAD_UART_Struct_{
     char* bufPtr;
@@ -52,7 +52,7 @@ typedef struct DAD_UART_Struct_{
 void DAD_UART_Set_Config(uint16_t baudRate, uint32_t moduleInstance, DAD_UART_Struct* UARTPtr);
 
 // Initializes the uart module with the specified config information. Needs a buffer to put characters in.
-void DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize);
+bool DAD_UART_Init(DAD_UART_Struct* UARTPtr, size_t bufferSize);
 
 // TODO Stop UART
 void DAD_UART_Stop(DAD_UART_Struct* UARTPtr);
