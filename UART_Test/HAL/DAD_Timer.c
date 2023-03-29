@@ -125,6 +125,27 @@ double DAD_Timer_Get_Time(uint32_t timerBase, Timer_A_UpModeConfig *timerConfig)
     return 0;                                                   // Default :/
 }
 
+void DAD_Timer_Restart(uint32_t timerBase, Timer_A_UpModeConfig *timerConfig){
+    DAD_Timer_Stop(timerBase, timerConfig);
+    MAP_Timer_A_configureUpMode(timerBase, timerConfig);
+    DAD_Timer_Start(timerBase);
+
+    //Set Timer Flag
+    switch(timerBase){
+    case TIMER_A0_BASE:
+        DAD_timerHasExpired0 = false;
+        break;
+    case TIMER_A1_BASE:
+        DAD_timerHasExpired1 = false;
+        break;
+    case TIMER_A2_BASE:
+        DAD_timerHasExpired2 = false;
+        break;
+    case TIMER_A3_BASE:
+        DAD_timerHasExpired3 = false;
+    }
+}
+
 static void DAD_Timer_Set_Interrupt(uint32_t timerBase){
     // Decide which interrupt
     uint32_t interruptNum;

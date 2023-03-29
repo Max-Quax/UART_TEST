@@ -18,7 +18,8 @@
     // TESTMODE_SEND
     // TESTMODE_FILL_EMPTY
     // TESTMODE_RX_2SOURCES
-#define TESTMODE_RX_2SOURCES
+    // TESTMODE_RX_TX_2SOURCES
+#define TESTMODE_RX_TX_2SOURCES
 
 typedef enum {READ, WRITE} testState;
 
@@ -26,6 +27,84 @@ int main(void)
 {
     //Stop WDT
     MAP_WDT_A_holdTimer();
+
+
+#ifdef TESTMODE_RX_TX_2SOURCES
+    // Related to baudrate generation and sampling. Config struct also
+    DAD_UART_Struct uartConfig1, uartConfig2;
+
+    DAD_UART_Set_Config(57600, EUSCI_A1_BASE, &uartConfig1);
+    DAD_UART_Set_Config(57600, EUSCI_A2_BASE, &uartConfig2);
+
+    // initialize and enable EUSCI_A0
+    size_t bufferSize = 750;
+    if(!DAD_UART_Init(&uartConfig2, bufferSize))    // If initialization fails, loop
+        while(1);
+    if(!DAD_UART_Init(&uartConfig1, bufferSize))    // If initialization fails, loop
+        while(1);
+
+    Timer_A_UpModeConfig timerCfg;
+    DAD_Timer_Initialize_us(500, TIMER_A1_BASE, &timerCfg);
+
+    while(1){
+        char c = 's';
+
+        // TODO implement timer btwn reads/writes?
+
+        // Test A2
+        // Blocks until char 'b' is received. Receiving 'b' begins test
+        while(c != 'b'){
+            while(!DAD_UART_HasChar(&uartConfig2));  // Block until has char
+//            UART_disableInterrupt(uartConfig2.moduleInst, EUSCI_A_UART_RECEIVE_INTERRUPT);
+//            Interrupt_disableInterrupt(INT_EUSCIA2);
+            c = DAD_UART_GetChar(&uartConfig2);
+            DAD_Timer_Restart(TIMER_A1_BASE, &timerCfg);            // Restart timer
+            while(!DAD_Timer_Has_Finished(TIMER_A1_BASE));          // Block for 50ms
+
+            DAD_UART_Write_Char(&uartConfig2, c);
+            DAD_Timer_Restart(TIMER_A1_BASE, &timerCfg);            // Restart timer
+            while(!DAD_Timer_Has_Finished(TIMER_A1_BASE));          // Block for 50ms
+//            UART_enableInterrupt(uartConfig2.moduleInst, EUSCI_A_UART_RECEIVE_INTERRUPT);
+//            Interrupt_enableInterrupt(INT_EUSCIA2);
+        }
+
+
+        // Receive actual test chars
+        c = 't';
+        while(c == 't'){                            // All chars should be 't'.
+            c = DAD_UART_GetChar(&uartConfig2);
+            DAD_Timer_Restart(TIMER_A1_BASE, &timerCfg);            // Restart timer
+            while(!DAD_Timer_Has_Finished(TIMER_A1_BASE));          // Block for 50ms
+            DAD_UART_Write_Char(&uartConfig2, c);
+            DAD_Timer_Restart(TIMER_A1_BASE, &timerCfg);            // Restart timer
+            while(!DAD_Timer_Has_Finished(TIMER_A1_BASE));          // Block for 50ms
+        }
+        //assert(c == 'q');                           // Check that character received really is a q and not corrupted
+
+
+        //MAP_UART_disableModule(uartConfig2.moduleInst);
+        //MAP_UART_enableModule(uartConfig1.moduleInst);
+        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0); // Toggle LED
+//
+//
+//        // Test A1
+//        // Blocks until char 'b' is received. Receiving 'b' begins test
+//        while(c != 'b'){
+//            while(!DAD_UART_HasChar(&uartConfig1)); // Block until has char
+//            c = DAD_UART_GetChar(&uartConfig1);
+//            DAD_UART_Write_Char(&uartConfig1, c);
+//        }
+//
+//        // Receive actual test chars
+//        c = 't';
+//        while(c == 't'){                            // All chars should be 't'.
+//            c = DAD_UART_GetChar(&uartConfig1);
+//            DAD_UART_Write_Char(&uartConfig1, c);
+//        }
+    }
+    #endif
+
+
 
 #ifdef TESTMODE_RX_2SOURCES
     // Related to baudrate generation and sampling. Config struct also
@@ -35,7 +114,7 @@ int main(void)
     DAD_UART_Set_Config(57600, EUSCI_A2_BASE, &uartConfig2);
 
     // initialize and enable EUSCI_A0
-    size_t bufferSize = 512;
+    size_t bufferSize = 750;
     DAD_UART_Init(&uartConfig2, bufferSize);        // This might be part of the problem
 //    MAP_UART_initModule(uartConfig2.moduleInst, &uartConfig2.uartConfig);
 //    MAP_UART_enableModule(uartConfig2.moduleInst);
