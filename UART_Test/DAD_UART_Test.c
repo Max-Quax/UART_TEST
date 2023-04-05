@@ -85,22 +85,24 @@ int main(void)
         //MAP_UART_disableModule(uartConfig2.moduleInst);
         //MAP_UART_enableModule(uartConfig1.moduleInst);
         MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0); // Toggle LED
-//
-//
-//        // Test A1
-//        // Blocks until char 'b' is received. Receiving 'b' begins test
-//        while(c != 'b'){
-//            while(!DAD_UART_HasChar(&uartConfig1)); // Block until has char
-//            c = DAD_UART_GetChar(&uartConfig1);
-//            DAD_UART_Write_Char(&uartConfig1, c);
-//        }
-//
-//        // Receive actual test chars
-//        c = 't';
-//        while(c == 't'){                            // All chars should be 't'.
-//            c = DAD_UART_GetChar(&uartConfig1);
-//            DAD_UART_Write_Char(&uartConfig1, c);
-//        }
+
+
+        // Test A1
+        // Blocks until char 'b' is received. Receiving 'b' begins test
+        while(c != 'b'){
+            while(!DAD_UART_HasChar(&uartConfig1)); // Block until has char
+            c = DAD_UART_GetChar(&uartConfig1);
+            DAD_UART_Write_Char(&uartConfig1, c);
+        }
+
+        // Receive actual test chars
+        c = 't';
+        while(c == 't'){                            // All chars should be 't'.
+            c = DAD_UART_GetChar(&uartConfig1);
+//            DAD_Timer_Restart(TIMER_A1_BASE, &timerCfg);            // Restart timer
+//            while(!DAD_Timer_Has_Finished(TIMER_A1_BASE));          // Block for 50ms
+            DAD_UART_Write_Char(&uartConfig1, c);
+        }
     }
     #endif
 

@@ -227,7 +227,6 @@ static uint8_t DAD_UART_Find_Second_Mod_Reg(float divisionFactor){
 }
 
 
-
 void EUSCIA0_IRQHandler(void){
     uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A0_BASE);
 
@@ -262,7 +261,7 @@ void EUSCIA2_IRQHandler(void){
 }
 
 void EUSCIA3_IRQHandler(void){
-    uint32_t intStatus = UART_getEnabledInterruptStatus(EUSCI_A3_BASE);
+    uint32_t intStatus = MAP_Timer_A_getInterruptStatus(EUSCI_A3_BASE);
 
     if(intStatus & EUSCI_A_UART_RECEIVE_INTERRUPT){
         modifiedRingBuf_put(UART3_BuffPtr, UART_receiveData(EUSCI_A3_BASE)); // Put received data at end of buffer
